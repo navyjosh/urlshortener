@@ -76,7 +76,6 @@ app.post("/api/shorturl", async (req, res) => {
   const originalUrl = req.body.url;
   console.log(`POST: url=${originalUrl}`);
   let isValidUrl = dns.lookup(originalUrl, async (err, address, family) => {
-    // console.log("address: %j family: IPv%s", address, family);
     if (err) {
       console.log(err);
       res.json({
