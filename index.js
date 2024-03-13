@@ -30,24 +30,25 @@ const shortUrlSchema = new mongoose.Schema({
 });
 let ShortUrl = mongoose.model("ShortUrl", shortUrlSchema);
 
-async function findShortUrl(url) {
-  console.log("connect");
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("findOne");
+async function findShortUrlByUrl(url) {
   return await ShortUrl.findOne({ originalUrl: url }).then((shortUrl) => {
-    console.log(`shortUrl: ${shortUrl}`);
+    return shortUrl;
+  });
+}
+async function findShortUrlByShortUrl(url) {
+  await mongoose.connect(process.env.MONGO_URI);
+
+  return await ShortUrl.findOne({ shortUrl: url }).then((shortUrl) => {
     return shortUrl;
   });
 }
 
 async function createAndSaveUrl(url) {
-  console.log("create and save");
   let newUrl = ShortUrl({
     originalUrl: url,
     shortUrl: makeid(5),
   });
   return await newUrl.save().then((surl) => {
-    console.log(`surl: ${surl}`);
     return surl;
   });
 }
@@ -55,6 +56,11 @@ async function createAndSaveUrl(url) {
 const app = express();
 let bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(async (req, res, next) => {
+  console.log(`url: ${req.url}`);
+  await mongoose.connect(process.env.MONGO_URI);
+  next();
+});
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
@@ -68,16 +74,13 @@ app.get("/", function (req, res) {
 });
 
 app.post("/api/shorturl", async (req, res) => {
-  console.log("isValidUrl()");
   let isValidUrl = isUrl(req.body.url);
   if (isValidUrl) {
-    console.log("url is valid");
     if (req.body.url.match("^https?://")) {
       // valid url start here
-      console.log("valid");
-      let shortUrl = await findShortUrl(req.body.url);
+
+      let shortUrl = await findShortUrlByUrl(req.body.url);
       if (!shortUrl) {
-        console.log("not found");
         shortUrl = await createAndSaveUrl(req.body.url);
       }
       return res.json({
@@ -90,6 +93,13 @@ app.post("/api/shorturl", async (req, res) => {
   res.json({
     error: "Invalid URL",
   });
+});
+
+app.get("/api/shorturl/:code", async (req, res) => {
+  let shortUrl = await findShortUrlByShortUrl(req.params.code);
+  if (shortUrl) {
+    res.redirect(shortUrl.originalUrl);
+  }
 });
 
 // Your first API endpoint
