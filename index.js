@@ -79,7 +79,7 @@ app.post("/api/shorturl", async (req, res) => {
     res.json({ error: "Invalid URL", msg: "Missing https?://" });
   } else {
     let domain = originalUrl.match(
-      /(?m)http(?:s?):\/\/.*?([^\.\/]+?\.[^\.]+?)(?:\/|$)/
+      /^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/
     )[1];
     console.log(`domain: ${domain}`);
     console.log(`originalUrl: ${originalUrl}`);
