@@ -1,9 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { isUrl } = require("check-valid-url");
-
-mongoose = require("mongoose");
+const URL = (mongoose = require("mongoose"));
+const dns = require("dns");
 
 function makeid(length) {
   let result = "";
@@ -74,24 +73,30 @@ app.get("/", function (req, res) {
 });
 
 app.post("/api/shorturl", async (req, res) => {
-  let isValidUrl = isUrl(req.body.url);
-  if (isValidUrl) {
-    if (req.body.url.match("^https?://")) {
+  const originalUrl = req.body.url;
+  console.log(`POST: url=${originalUrl}`);
+  let isValidUrl = dns.lookup(originalUrl, async (err, address, family) => {
+    // console.log("address: %j family: IPv%s", address, family);
+    if (err) {
+      console.log(err);
+      res.json({
+        error: "Invalid URL",
+      });
+    } else {
       // valid url start here
-
-      let shortUrl = await findShortUrlByUrl(req.body.url);
+      let shortUrl = await findShortUrlByUrl(originalUrl);
       if (!shortUrl) {
-        shortUrl = await createAndSaveUrl(req.body.url);
+        shortUrl = await createAndSaveUrl(originalUrl);
+        console.log(
+          `created shortUrl: ${shortUrl.originalUrl} -> ${shortUrl.shortUrl}`
+        );
       }
-      return res.json({
+
+      res.json({
         original_url: shortUrl.originalUrl,
         short_url: shortUrl.shortUrl,
       });
     }
-  }
-  // not valid url
-  res.json({
-    error: "Invalid URL",
   });
 });
 
