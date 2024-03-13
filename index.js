@@ -75,35 +75,42 @@ app.get("/", function (req, res) {
 app.post("/api/shorturl", async (req, res) => {
   const originalUrl = req.body.url;
   console.log(`POST: url=${originalUrl}`);
-  let isValidUrl = dns.lookup(originalUrl, async (err, address, family) => {
-    if (err) {
-      console.log(err);
-      res.json({
-        error: "Invalid URL",
-      });
-    } else {
-      // valid url start here
-      let shortUrl = await findShortUrlByUrl(originalUrl);
-      if (!shortUrl) {
-        shortUrl = await createAndSaveUrl(originalUrl);
-        console.log(
-          `created shortUrl: ${shortUrl.originalUrl} -> ${shortUrl.shortUrl}`
-        );
-      }
+  if (!originalUrl.match("^https?://")) {
+    res.json({ error: "Invalid URL" });
+  } else {
+    let domain = originalUrl.replace(/(^\w+:|^)\/\//, "");
+    console.log(`domain: ${domain}`);
+    console.log(`originalUrl: ${originalUrl}`);
+    dns.lookup(domain, async (err, address, family) => {
+      if (err) {
+        console.log(err);
+        res.json({
+          error: "Invalid URL",
+        });
+      } else {
+        // valid url start here
+        let shortUrl = await findShortUrlByUrl(originalUrl);
+        if (!shortUrl) {
+          shortUrl = await createAndSaveUrl(originalUrl);
+          console.log(
+            `created shortUrl: ${shortUrl.originalUrl} -> ${shortUrl.shortUrl}`
+          );
+        }
 
-      res.json({
-        original_url: shortUrl.originalUrl,
-        short_url: shortUrl.shortUrl,
-      });
-    }
-  });
+        res.json({
+          original_url: shortUrl.originalUrl,
+          short_url: shortUrl.shortUrl,
+        });
+      }
+    });
+  }
 });
 
 app.get("/api/shorturl/:code", async (req, res) => {
   let shortUrl = await findShortUrlByShortUrl(req.params.code);
   if (shortUrl) {
     console.log(`original url: ${shortUrl.originalUrl}`);
-    res.redirect(shortUrl.originalUrl);
+    res.redirect(301, shortUrl.originalUrl);
   }
 });
 
