@@ -102,6 +102,7 @@ app.post("/api/shorturl", async (req, res) => {
 app.get("/api/shorturl/:code", async (req, res) => {
   let shortUrl = await findShortUrlByShortUrl(req.params.code);
   if (shortUrl) {
+    console.log(`original url: ${shortUrl.originalUrl}`);
     res.redirect(shortUrl.originalUrl);
   }
 });
