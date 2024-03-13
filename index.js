@@ -78,7 +78,9 @@ app.post("/api/shorturl", async (req, res) => {
   if (!originalUrl.match("^https?://")) {
     res.json({ error: "Invalid URL", msg: "Missing https?://" });
   } else {
-    let domain = originalUrl.match(/(\w+)\.\w{2,}(\/|\?|$)/)[0];
+    let domain = originalUrl.match(
+      /(?m)http(?:s?):\/\/.*?([^\.\/]+?\.[^\.]+?)(?:\/|$)/
+    )[1];
     console.log(`domain: ${domain}`);
     console.log(`originalUrl: ${originalUrl}`);
     dns.lookup(domain, async (err, address, family) => {
